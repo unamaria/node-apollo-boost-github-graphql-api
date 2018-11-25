@@ -81,3 +81,34 @@ client.
     return pageInfo;
   })
   .catch(console.log);
+
+const ADD_STAR = gql`
+  mutation AddStar($repositoryId: ID!) {
+    addStar(input: { starrableId: $repositoryId }) {
+      starrable {
+        id
+        viewerHasStarred
+      }
+    }
+  }
+`;
+
+const REMOVE_STAR = gql`
+  mutation RemoveStar($repositoryId: ID!) {
+    removeStar(input: { starrableId: $repositoryId }) {
+      starrable {
+        id
+        viewerHasStarred
+      }
+    }
+  }
+`;
+
+client
+  .mutate({
+    mutation: REMOVE_STAR,
+    variables: {
+      repositoryId: 'MDEwOlJlcG9zaXRvcnk2MzM1MjkwNw==',
+    },
+  })
+  .then(console.log);
