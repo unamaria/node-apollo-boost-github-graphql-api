@@ -14,19 +14,70 @@ const client = new ApolloClient({
   },
 });
 
-const GET_ORGANIZATION = gql`
-  {
-    organization(login: "the-road-to-learn-react") {
+const GET_REPOSITORIES_OF_ORGANIZATION = gql`
+  query($organization: String!, $cursor: String) {
+    organization(login: $organization) {
       name
       url
       description
+      repositories(first: 5, after: $cursor, orderBy: { direction: DESC, field: STARGAZERS }) {
+        edges {
+          node {
+            ...RepositoryNodeFragment
+          }
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+      }
     }
+  }
+
+  fragment RepositoryNodeFragment on Repository {
+    name
+    url
   }
 `;
 
 
 client.
   query({
-    query: GET_ORGANIZATION,
+    query: GET_REPOSITORIES_OF_ORGANIZATION,
+    variables: {
+      organization: "the-road-to-learn-react",
+      cursor: undefined,
+    },
   })
-  .then(console.log);
+  .then(result => {
+    const { pageInfo, edges } = result.data.organization.repositories;
+    const { endCursor, hasNextPage } = pageInfo;
+
+    console.log('second page', edges.length);
+    console.log('endCursor', endCursor);
+
+    return pageInfo;
+  })
+  .then(({ endCursor, hasNextPage }) => {
+    if (!hasNextPage) {
+      throw Error('No next page.');
+    }
+
+    return client.query({
+      query: GET_REPOSITORIES_OF_ORGANIZATION,
+      variables: {
+        organization: "the-road-to-learn-react",
+        cursor: endCursor,
+      },
+    });
+  })
+  .then(result => {
+    const { pageInfo, edges } = result.data.organization.repositories;
+    const { endCursor, hasNextPage } = pageInfo;
+
+    console.log('second page', edges.length);
+    console.log('endCursor', endCursor);
+
+    return pageInfo;
+  })
+  .catch(console.log);
